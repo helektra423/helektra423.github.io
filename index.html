@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hysilens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020406;
+    --blue: #3fb8ff;
+    --blue-glow: rgba(63, 184, 255, .55);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); overflow: hidden; }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Courier Prime", "Courier New", Courier, monospace;
+    cursor: default; user-select: none; -webkit-user-select: none;
+  }
+
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,.035) 0px, rgba(255,255,255,.035) 1px,
+      rgba(0,0,0,0) 1px, rgba(0,0,0,0) 3px);
+  }
+
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 3;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.65) 100%);
+  }
+
+  #line {
+    position: relative; z-index: 1;
+    color: var(--blue);
+    font-size: clamp(16px, 2.6vw, 30px);
+    letter-spacing: .12em;
+    white-space: pre;
+    text-shadow: 0 0 6px var(--blue-glow), 0 0 18px rgba(63,184,255,.25);
+    animation: flicker 6s infinite;
+  }
+  #cursor {
+    display: inline-block; width: .62em; height: .12em;
+    background: var(--blue); margin-left: .08em; vertical-align: baseline;
+    box-shadow: 0 0 8px var(--blue-glow);
+    animation: blink 1s steps(1) infinite;
+  }
+  #cursor.solid { animation: none; }
+
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes flicker {
+    0%, 96%, 100% { opacity: 1; }
+    97% { opacity: .82; }
+    98% { opacity: 1; }
+    99% { opacity: .9; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #line { animation: none; }
+  }
+
+  #credits {
+    position: fixed; left: 0; right: 0; bottom: 5vh; z-index: 1;
+    padding: 0 5vw; text-align: center;
+    font-size: clamp(9px, 1.05vw, 12px); line-height: 1.9; letter-spacing: .06em;
+    color: rgba(63, 184, 255, .38);
+    opacity: 0; transition: opacity 2.4s ease;
+  }
+  #credits.show { opacity: 1; }
+
+  #yt-wrap { position: fixed; left: -9999px; top: 0; width: 200px; height: 200px; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div id="line"><span id="text"></span><span id="cursor"></span></div>
+<div id="credits">
+  <p>Honkai: Star Rail © miHoYo. All rights reserved.</p>
+  <p>This is an unofficial fan page. All related properties belong to their respective owners.</p>
+  <p>Made with love for Hysilens ⋅°₊‧ ଳ ‧₊° ⋅</p>
+</div>
+<div id="yt-wrap"><div id="yt"></div></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(function () {
+  var VIDEO_ID = "17bgdGsqlI4";
+  var TARGET_VOLUME = 70;
+
+  var textEl = document.getElementById("text");
+  var cursor = document.getElementById("cursor");
+  var credits = document.getElementById("credits");
+  var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
+  var player = null, playerReady = false, started = false;
+
+  window.onYouTubeIframeAPIReady = function () {
+    player = new YT.Player("yt", {
+      width: "200", height: "200", videoId: VIDEO_ID,
+      playerVars: { controls: 0, disablekb: 1, playsinline: 1, loop: 1, playlist: VIDEO_ID, rel: 0 },
+      events: {
+        onReady: function () { playerReady = true; player.setVolume(0); },
+        onStateChange: function (e) {
+          if (e.data === YT.PlayerState.ENDED) { player.seekTo(0); player.playVideo(); }
+        }
+      }
+    });
+  };
+
+  function primeAudio() {
+    if (player && playerReady) { player.setVolume(0); player.playVideo(); }
+  }
+
+  async function fadeInMusic() {
+    if (!player || !playerReady) return;
+    if (player.getPlayerState() !== YT.PlayerState.PLAYING) player.playVideo();
+    for (var v = 0; v <= TARGET_VOLUME; v += 2) {
+      player.setVolume(v);
+      await sleep(60);
+    }
+  }
+
+  var INITIAL = "Press any key to continue";
+  var FINAL = "See you tomorrow ♪";
+
+  async function type(str, delay) {
+    for (var i = 0; i < str.length; i++) {
+      textEl.textContent += str[i];
+      await sleep(delay);
+    }
+  }
+  async function erase(delay) {
+    while (textEl.textContent.length) {
+      textEl.textContent = textEl.textContent.slice(0, -1);
+      await sleep(delay);
+    }
+  }
+
+  async function onAnyKey() {
+    if (started) return;
+    started = true;
+    removeListeners();
+    primeAudio();
+
+    cursor.classList.add("solid");
+    credits.classList.add("show");
+    await sleep(350);
+    await erase(110);
+    await sleep(700);
+    await type(FINAL, 140);
+    cursor.classList.remove("solid");
+    await sleep(400);
+    fadeInMusic();
+
+    setTimeout(function () {
+      if (player && player.getPlayerState && player.getPlayerState() !== YT.PlayerState.PLAYING) {
+        var kick = function () {
+          player.playVideo(); player.setVolume(TARGET_VOLUME);
+          document.removeEventListener("pointerdown", kick);
+          document.removeEventListener("keydown", kick);
+        };
+        document.addEventListener("pointerdown", kick);
+        document.addEventListener("keydown", kick);
+      }
+    }, 2500);
+  }
+
+  function removeListeners() {
+    document.removeEventListener("keydown", onAnyKey);
+    document.removeEventListener("pointerdown", onAnyKey);
+  }
+
+  (async function init() {
+    await sleep(600);
+    await type(INITIAL, 70);
+    document.addEventListener("keydown", onAnyKey);
+    document.addEventListener("pointerdown", onAnyKey);
+  })();
+})();
+</script>
+</body>
+</html>
