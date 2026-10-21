@@ -125,11 +125,12 @@
   }
 
   var INITIAL = "Press any key to continue";
-  var FINAL = "See you tomorrow ♪";
+  var FINAL = "See you tomorrow ‧₊˚♪𝄞𝄢₊˚⊹";
 
   async function type(str, delay) {
-    for (var i = 0; i < str.length; i++) {
-      textEl.textContent += str[i];
+    var chars = Array.from(str);
+    for (var i = 0; i < chars.length; i++) {
+      textEl.textContent += chars[i];
       await sleep(delay);
     }
   }
